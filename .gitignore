@@ -1,0 +1,33 @@
+# Environnement virtuel
+venv/
+.venv/
+
+# Python
+__Pycache__/
+*.Py[cod]
+
+# Django
+db.sqlite3
+*.log
+
+# Fichiers générés
+storage/
+
+# Test audio
+test_kokoro*.wave
+test_output/
+
+#fichiers de test
+test_*.wav
+
+# Variables d'environnement
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# Système
+.DS_store
+Thumbs.db
