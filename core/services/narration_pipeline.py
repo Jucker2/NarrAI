@@ -7,6 +7,7 @@ from core.services.chapter_detector import ChapterDetector
 from core.services.text_chunker import TextChunker 
 from core.services.storage_manager import StorageManager
 from core.services.tts.manager import TTSManager
+from core.services.audio.merger import AudioMerger
 
 from core.utils.constants import (EXTRACTED_TEXT,CLEAN_TEXT)
 
@@ -19,6 +20,7 @@ class NarrationPipeline:
         self.chunker=TextChunker()
         self.storage=StorageManager()
         self.tts=TTSManager()
+        self.merger=AudioMerger()
 
     def process(self,document:Document)->Document:
         self.storage.create(document)
@@ -73,4 +75,29 @@ class NarrationPipeline:
                 self.tts.generate(chunk,
                 str(output_path)
                 )
+
+            chunk_audio_files=sorted(
+                chapter_audio_dir.glob("chunk_*.wav")
+            )
+            chapter_audio_path=(
+                audio_dir / f"chapter_{chapter_index:02d}.wav"
+            )
+
+            self.merger.merge(
+                chunk_audio_files,
+                chapter_audio_path
+            )
+
+        chapter_audio_files=sorted(
+            audio_dir.glob("chapter_*.wav")
+        ) 
+
+        audiobook_path=(
+            audio_dir / "audiobook.wav"
+        )
+
+        self.merger.merge(
+            chapter_audio_files,
+            audiobook_path
+        )
         return document

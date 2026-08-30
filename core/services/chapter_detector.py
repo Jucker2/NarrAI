@@ -26,8 +26,8 @@ class ChapterDetector:
                     if current_content:
                         document.chapters.append(Chapter(title=current_title,content="\n".join(current_content)))
                     current_title=line
-                    currnet_content=[]
-                    break
+                    current_content=[]
+
                     is_title=True
                     break
             if not is_title:
