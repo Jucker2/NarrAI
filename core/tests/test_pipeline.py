@@ -5,60 +5,115 @@ from core.domaine.document import Document
 from core.services.narration_pipeline import NarrationPipeline
 
 class NarrationPipelineTests(TestCase):
-    def test_pipeline(self):
-        pdf_path=(Path(__file__).parent / "files" / "test.pdf")
-        document=Document(title="test",pdf_path=str(pdf_path))
-        pipeline=NarrationPipeline()
+   def test_pipeline(self):
+    
 
-        document=pipeline.process(document)
+    pdf_path = (
+        Path(__file__).parent
+        / "files"
+        / "test.pdf"
+    )
 
-        self.assertGreater(len(document.raw_text),0)  
-        self.assertGreater(len(document.clean_text),0)
-        self.assertGreater(len(document.chapters),0)
+    document = Document(
+        title="test",
+        pdf_path=str(pdf_path)
+    )
 
-        storage_dir= (
-            Path("storage") / document.uuid
+    pipeline = NarrationPipeline()
+
+    document = pipeline.process(document)
+
+    # Texte
+    self.assertGreater(
+        len(document.raw_text),
+        0
+    )
+
+    self.assertGreater(
+        len(document.clean_text),
+        0
+    )
+
+    # Chapitres
+    self.assertGreater(
+        len(document.chapters),
+        0
+    )
+
+    audio_dir = (
+        pipeline.storage.root
+        / document.uuid
+        / "audio"
+    )
+
+    # Dossier audio
+    self.assertTrue(
+        audio_dir.exists()
+    )
+
+    # Vérification des chapitres
+    for chapter_index, chapter in enumerate(
+        document.chapters,
+        start=1
+    ):
+
+        self.assertGreater(
+            len(chapter.chunks),
+            0
         )
 
-        chunks_dir=storage_dir / "chunks"
-        audio_dir= storage_dir / "audio"
+        chapter_audio_dir = (
+            audio_dir
+            / f"chapter_{chapter_index:02d}"
+        )
 
-        self.assertTrue(chunks_dir.exists())
-        self.assertTrue(audio_dir.exists())
+        self.assertTrue(
+            chapter_audio_dir.exists()
+        )
 
-        for chapter_index,chapter in enumerate(document.chapters,start=1):
-            chapter_chunks_dir=(
-                chunks_dir / f"chapter_{chapter_index:02d}"
-            )
+        # WAV des chunks
+        chunk_audio_files = sorted(
+            chapter_audio_dir.glob("chunk_*.wav")
+        )
 
-            chapter_audio_dir=(
-                audio_dir / f"chapter_{chapter_index:02d}"
-            )
+        self.assertEqual(
+            len(chunk_audio_files),
+            len(chapter.chunks)
+        )
 
-            self.assertTrue(
-                chapter_chunks_dir.exists()
-            )
-            self.assertTrue(
-                chapter_audio_dir.exists()
-            )
+        for audio_file in chunk_audio_files:
 
             self.assertGreater(
-                len(chapter.chunks),0
+                audio_file.stat().st_size,
+                0
             )
 
-            for chunk in chapter.chunks:
-                chunk_text=(
-                    chapter_chunks_dir / f"chunk_{chunk.index:04d}.txt"
-                )
+        # WAV du chapitre
+        chapter_audio = (
+            audio_dir
+            / f"chapter_{chapter_index:02d}.wav"
+        )
 
-                chunk_audio=(
-                    chapter_audio_dir / f"chunk_{chunk.index:04d}.wav"
-                )
+        self.assertTrue(
+            chapter_audio.exists()
+        )
 
-                self.assertTrue(chunk_text.exists())
-                self.assertTrue(chunk_audio.exists())
+        self.assertGreater(
+            chapter_audio.stat().st_size,
+            0
+        )
 
-                self.assertGreater(
-                    chunk_audio.stat().st_size,0
-                )
+    # Audiobook final
+    audiobook = (
+        audio_dir
+        / "audiobook.wav"
+    )
 
+    self.assertTrue(
+        audiobook.exists()
+    )
+
+    self.assertGreater(
+        audiobook.stat().st_size,
+        0
+    )
