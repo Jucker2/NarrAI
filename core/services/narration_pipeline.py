@@ -9,6 +9,7 @@ from core.services.storage_manager import StorageManager
 from core.services.tts.manager import TTSManager
 from core.services.audio.merger import AudioMerger
 
+from core.exceptions import (PDFProcessingError,TTSGenerationError,)
 from core.utils.constants import (EXTRACTED_TEXT,CLEAN_TEXT)
 
 class NarrationPipeline:
@@ -24,7 +25,10 @@ class NarrationPipeline:
 
     def process(self,document:Document)->Document:
         self.storage.create(document)
-        document=self.extractor.process(document)
+        try:
+            document=self.extractor.process(document)
+        except Exception as exc:
+            raise PDFProcessingError(f"Echec du traitement du PDF : {exc}")from exc
         self.storage.save_text(document,EXTRACTED_TEXT,document.raw_text)
         document=self.cleaner.process(document)
         document=self.preprocessor.process(document)
@@ -72,9 +76,14 @@ class NarrationPipeline:
                 output_path=(
                     chapter_audio_dir 
                     / f"chunk_{chunk.index:04d}.wav")
-                self.tts.generate(chunk,
-                str(output_path)
-                )
+                try:
+                    self.tts.generate(chunk,
+                    str(output_path)
+                    )
+                except Exception as exc:
+                    raise TTSGenerationError(f"Echec de generation audio pour"
+                    f"le chunk {chunk.index}"
+                    f"du chapitre {chapter_index}: {exc}") from exc
 
             chunk_audio_files=sorted(
                 chapter_audio_dir.glob("chunk_*.wav")

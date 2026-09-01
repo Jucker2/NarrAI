@@ -1,6 +1,8 @@
 from pathlib import Path
 import subprocess
 
+from core.exceptions import AudioMergerError
+
 class AudioMerger:
     def merge(self,input_files,output_path):
         """
@@ -50,16 +52,22 @@ class AudioMerger:
                 str(output_path)
             ]
 
-            result= subprocess.run(
-                command,
-                capture_output=True,
-                text=True
-            )
-
-            print("FFMPEG STDERR:")
-            print(result.stderr)
-            result.check_returncode()
-
+            try:
+                result= subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True
+                )
+            except FileNotFoundError as exc:
+                raise AudioMergerError(
+                    "FFmpeg est introuvable. "
+                    " vérifier que FFmeg est installé et accessible dans le PATH."
+                ) from exc
+            if result.returncode != 0:
+                raise AudioMergerError(
+                    f"echec de la fusion audio avec FFmeg:\n"
+                    f"{result.stderr.strip()}"
+                )
         finally:
             if concat_file.exists():
                 concat_file.unlink()

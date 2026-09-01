@@ -19,7 +19,7 @@ test_output/
 
 #fichiers de test
 test_*.wav
-*.waw
+*.wav
 
 # Variables d'environnement
 .env
